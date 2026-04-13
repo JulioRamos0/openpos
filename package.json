@@ -1,0 +1,27 @@
+{
+  "name": "pos-tui",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/app.tsx",
+    "seed": "bun run src/db/seed.ts",
+    "start": "bun run src/app.tsx",
+    "import": "bun run src/db/import-csv.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "ink": "7.0.0",
+    "ink-text-input": "^6.0.0",
+    "node-thermal-printer": "^4.6.0",
+    "printer": "^0.4.0",
+    "react": "19",
+    "react-devtools-core": "^7.0.1",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "19",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5.4.5"
+  }
+}
