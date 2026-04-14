@@ -1,4 +1,4 @@
-# OPENPOS v22.14.0
+# OPENPOS
 
 Sistema de punto de venta para terminal (TUI) construido con Bun, Ink, Zustand y Drizzle ORM.
 
