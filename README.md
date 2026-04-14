@@ -39,6 +39,36 @@ npm install
 bun run seed
 ```
 
+## Base de Datos
+
+El sistema usa **SQLite** como motor de base de datos (archivo `pos.db`), gestionado con **Drizzle ORM**.
+
+### Tablas
+
+| Tabla | Descripción |
+|-------|-------------|
+| `products` | Catálogo de productos (sku, name, price, stock, etc.) |
+| `sales` | Registro de ventas/tickets |
+| `users` | Usuarios del sistema (username, pin, role) |
+| `config` | Configuración del negocio |
+
+### Crear usuario
+
+```bash
+# Agregar usuario con rol cashier (por defecto)
+pos.exe add user juan 1234
+
+# Agregar usuario admin
+pos.exe add user juan 1234 --role admin
+```
+
+### Roles disponibles
+
+| Rol | Descripción |
+|-----|-------------|
+| `admin` | Acceso completo al sistema |
+| `cashier` | Usuario de caja (predeterminado)
+
 ## Uso
 
 ### Modo interactivo (Interfaz visual)
@@ -55,6 +85,7 @@ pos.exe --version           # Mostrar versión
 pos.exe import products     # Importar productos desde CSV
 pos.exe export products     # Exportar productos a CSV
 pos.exe seed                # Insertar productos de ejemplo
+pos.exe add user <username> <pin> [--role]  # Agregar usuario
 pos.exe config get          # Ver configuración
 pos.exe config set <key> <value>  # Actualizar configuración
 ```
@@ -93,13 +124,6 @@ pos.exe import products productos.csv
 # Simular importación (sin guardar)
 pos.exe import products productos.csv --dry-run
 ```
-
-### Credenciales por defecto
-
-| Usuario | PIN |
-|---------|-----|
-| admin   | 1234 |
-| caja    | 5678 |
 
 ### Atajos de teclado
 

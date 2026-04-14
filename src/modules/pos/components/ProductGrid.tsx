@@ -79,7 +79,7 @@ function StockBar(props: { stock: number; max: number; width: number; low: boole
   const col    = low ? theme.red : stock > max * 0.5 ? theme.green : theme.amber;
   return (
     <Text>
-      <Text color={col}>{" ▰".repeat(filled)}</Text>
+      <Text color={col}>{"▰".repeat(filled)}</Text>
       <Text color={theme.textDim}>{"▱".repeat(empty)}</Text>
     </Text>
   );

@@ -1,7 +1,7 @@
 import { resolve } from "path";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { db, initDb, getConfig, setConfig, CONFIG_KEYS } from "./db/client.js";
-import { products } from "./db/schema.js";
+import { products, users } from "./db/schema.js";
 import { sql } from "drizzle-orm";
 
 const VERSION = "1.0.0";
@@ -20,6 +20,7 @@ COMANDOS:
   import products  Importar productos desde archivo CSV
   export products Exportar productos a archivo CSV
   seed            Insertar productos de ejemplo
+  add user        Agregar nuevo usuario
   config get      Ver configuracion actual
   config set      Actualizar configuracion
 
@@ -33,12 +34,15 @@ EJEMPLOS:
   import products   Importar productos
   export products   Exportar productos
   seed              Productos de ejemplo
+  add user juan 1234                    Agregar usuario (role: cashier)
+  add user juan 1234 --role admin       Agregar usuario admin
   config get        Ver configuracion
   config set        Actualizar configuracion
 `;
 
 const VALID_UNIT_TYPES = ["pza", "kg", "g", "lt", "ml", "m", "cm"];
 const VALID_CONFIG_KEYS = Object.values(CONFIG_KEYS);
+const VALID_ROLES = ["admin", "cashier"];
 
 function showHelp(): void {
   console.log(HELP_TEXT);
@@ -261,33 +265,83 @@ async function runSeed(dryRun: boolean): Promise<void> {
 
 async function configGet(key: string): Promise<void> {
   if (!key) {
-    console.log("Claves de configuración disponibles:");
+    console.log("Available config keys:");
     VALID_CONFIG_KEYS.forEach(k => {
       const val = getConfig(k);
-      console.log(`  ${k}: ${val || "(sin valor)"}`);
+      console.log(`  ${k}: ${val || "(no value)"}`);
     });
     return;
   }
 
   if (!VALID_CONFIG_KEYS.includes(key as any)) {
-    showError(`Clave inválida. Use: ${VALID_CONFIG_KEYS.join(", ")}`);
+    showError(`Invalid key. Use: ${VALID_CONFIG_KEYS.join(", ")}`);
   }
 
   const val = getConfig(key);
-  console.log(`${key} = ${val || "(sin valor)"}`);
+  console.log(`${key} = ${val || "(no value)"}`);
 }
 
 async function configSet(key: string, value: string): Promise<void> {
   if (!key || value === undefined) {
-    showError("Faltan parámetros. Uso: pos.exe config set <key> <value>");
+    showError("Missing parameters. Usage: pos.exe config set <key> <value>");
   }
 
   if (!VALID_CONFIG_KEYS.includes(key as any)) {
-    showError(`Clave inválida. Use: ${VALID_CONFIG_KEYS.join(", ")}`);
+    showError(`Invalid key. Use: ${VALID_CONFIG_KEYS.join(", ")}`);
   }
 
   setConfig(key, value);
   console.log(`✅ ${key} = ${value}`);
+}
+
+async function addUser(username: string, pin: string, role: string): Promise<void> {
+  if (!username || !pin) {
+    showError("Missing parameters. Usage: pos.exe add user <username> <pin> [--role <role>]");
+  }
+
+  if (username.includes(" ")) {
+    showError("Username cannot contain spaces");
+  }
+
+  if (pin.includes(" ")) {
+    showError("PIN cannot contain spaces");
+  }
+
+  if (username.length < 2) {
+    showError("Username must be at least 2 characters");
+  }
+
+  if (pin.length < 4) {
+    showError("PIN must be at least 4 characters");
+  }
+
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    showError("Username can only contain letters, numbers and underscores");
+  }
+
+  const finalRole = role || "cashier";
+  if (!VALID_ROLES.includes(finalRole as any)) {
+    showError(`Invalid role. Use: ${VALID_ROLES.join(", ")}`);
+  }
+
+  initDb();
+
+  const existing = db.select().from(users).where(sql`username = ${username}`).get();
+  if (existing) {
+    showError(`User '${username}' already exists`);
+  }
+
+  db.insert(users).values({
+    username,
+    name: username,
+    pin,
+    role: finalRole,
+    active: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }).run();
+
+  console.log(`✅ User '${username}' created with role '${finalRole}'`);
 }
 
 export async function runCLI(): Promise<boolean> {
@@ -344,6 +398,22 @@ export async function runCLI(): Promise<boolean> {
         process.exit(0);
       }
       showError("Uso: pos.exe config get <key> | set <key> <value>");
+      break;
+
+    case "add":
+      if (subcmd === "user") {
+        const roleIdx = args.indexOf("--role");
+        const role = roleIdx !== -1 ? args[roleIdx + 1] : undefined;
+        const userIdx = args.indexOf("user");
+        const username = args[userIdx + 1];
+        const pin = args[userIdx + 2];
+        if (!username || !pin) {
+          showError("Missing parameters. Usage: pos.exe add user <username> <pin> [--role <role>]");
+        }
+        await addUser(username, pin, role || "cashier");
+        process.exit(0);
+      }
+      showError("Usage: pos.exe add user <username> <pin> [--role <role>]");
       break;
 
     default:

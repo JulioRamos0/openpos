@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { db } from "../db/client.js";
+import { users } from "../db/schema.js";
+import { sql } from "drizzle-orm";
 
 type User = {
   id: number;
@@ -21,18 +24,13 @@ export const useAuth = create<AuthStore>((set) => ({
   user: null,
 
   login(username, pin) {
-    // Users hardcodeados (también podrían venir de DB)
-    const users: User[] = [
-      { id: 1, username: "admin", pin: "1234", name: "Administrador", role: "admin", active: 1 },
-      { id: 2, username: "caja", pin: "5678", name: "Caja 1", role: "cashier", active: 1 },
-    ];
-
-    const validUser = users.find(
+    const dbUsers = db.select().from(users).where(sql`active = 1`).all();
+    const validUser = dbUsers.find(
       (u) => u.username.toLowerCase() === username.toLowerCase() && u.pin === pin && u.active === 1
     );
 
     if (validUser) {
-      set({ isAuthenticated: true, user: validUser });
+      set({ isAuthenticated: true, user: validUser as User });
       return true;
     }
 

@@ -51,8 +51,20 @@ export const sales = sqliteTable("sales", {
   createdBy:  text("created_by").default("admin"),
 });
 
+export const users = sqliteTable("users", {
+  id:         integer("id").primaryKey({ autoIncrement: true }),
+  username:   text("username").notNull().unique(),
+  name:       text("name").notNull(),
+  pin:        text("pin").notNull(),
+  role:       text("role").notNull().default("cashier"),
+  active:     integer("active").default(1),
+  createdAt:  text("created_at").default(new Date().toISOString()),
+  updatedAt:  text("updated_at").default(new Date().toISOString()),
+});
+
 export type Product = typeof products.$inferSelect;
 export type Sale    = typeof sales.$inferSelect;
+export type User    = typeof users.$inferSelect;
 
 // Tipos para reportes
 export type SaleItem = {

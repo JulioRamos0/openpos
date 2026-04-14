@@ -100,6 +100,18 @@ export function initDb() {
       created_by TEXT DEFAULT 'admin'
     )
   `);
+  db.run(sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      username   TEXT NOT NULL UNIQUE,
+      name       TEXT NOT NULL,
+      pin        TEXT NOT NULL,
+      role       TEXT NOT NULL DEFAULT 'cashier',
+      active     INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 
   initDefaultConfig();
 }
