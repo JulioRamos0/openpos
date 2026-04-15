@@ -1,20 +1,42 @@
-FROM oven/bun:latest
+# Stage 1: Build
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
-# Copy package.json and lock file (if any) first for better caching
+# Copy dependency files first
 COPY package.json bun.lock* package-lock.json* ./
 
-# Install dependencies (using bun)
+# Install dependencies
 RUN bun install
 
-# Copy the rest of the application
+# Copy source code and assets
 COPY . .
 
-# Set environment variable to ensure terminal colors/formatting
-ENV TERM=xterm-256color
-ENV NODE_ENV=development
+# Compile the application for Linux
+# --minify: smaller binary
+# --compile: standalone executable
+# Note: --windows-icon is only relevant for Windows targets
+RUN bun build src/app.tsx --compile --minify --outfile pos-linux
 
-# Set entrypoint to the application main file
-# This allows passing arguments like 'add user' directly
-ENTRYPOINT ["bun", "src/app.tsx"]
+# Stage 2: Runtime
+FROM oven/bun:latest
+
+# We still use /app for data (db, config)
+WORKDIR /app
+
+# Copy the compiled binary to a system path to avoid being shadowed by volumes
+COPY --from=builder /app/pos-linux /usr/local/bin/pos
+
+# Copy necessary assets and config
+COPY --from=builder /app/assets ./assets
+COPY --from=builder /app/config.json* ./
+
+# Support for SQLite persistence
+# The pos.db will still be used/created in the working directory (/app)
+
+# Set environment variables for terminal interaction
+ENV TERM=xterm-256color
+ENV NODE_ENV=production
+
+# Now we run 'pos' from the system path
+ENTRYPOINT ["pos"]
